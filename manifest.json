@@ -1,0 +1,38 @@
+{
+  "name": "SpaceDuckHunter",
+  "short_name": "SpaceDuckHunter",
+  "description": "SpaceDuckHunter - a free retro-style duck-shooting game set in a glowing space forest with day and night cycles and live weather. Beware the laughing raccoon.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
+  "orientation": "landscape",
+  "background_color": "#05071a",
+  "theme_color": "#05071a",
+  "categories": [
+    "games"
+  ],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#050a1c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SpaceDuckHunter">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <title>SpaceDuckHunter</title>
+  <meta name="description" content="SpaceDuckHunter - a free retro-style duck-shooting game set in a glowing space forest with day and night cycles and live weather. Beware the laughing raccoon.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23050a1c'/%3E%3Cellipse cx='16' cy='18' rx='10' ry='7' fill='%237dff6a'/%3E%3Ccircle cx='23' cy='11' r='5' fill='%2313a872'/%3E%3Cpath d='M26 11l5 1.5-5 1.5z' fill='%23ffb41e'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css?v=4">
+  <link rel="stylesheet" href="css/mobile.css?v=4">
+</head>
+<body>
+  <canvas id="game" aria-label="SpaceDuckHunter game screen"></canvas>
+
+  <div id="ui">
+    <section id="loading" class="screen"><p class="loadtxt">LOADING THE FOREST&hellip;</p></section>
+
+    <section id="title" class="screen hidden">
+      <div class="titlewrap">
+        <div class="titleleft">
+          <h1 class="logo"><span class="l1">SPACE</span><span class="l2">DUCK</span><span class="l3">HUNTER</span></h1>
+          <p class="tag">Aim true. The raccoon is watching.</p>
+          <div class="menu">
+            <button id="btnStart" class="primary">START GAME</button>
+            <button id="btnScores">HIGH SCORES</button>
+            <button id="btnSettings">SETTINGS</button>
+          </div>
+          <p class="hint desk"><b>Mouse</b>: aim &middot; <b>left click</b> shoot &middot; <b>right click</b> reload &nbsp; <b>Gamepad</b>: sticks aim &middot; <b>A</b> shoot &middot; <b>B</b> reload &nbsp; <b>Keys</b>: arrows/WASD aim &middot; <b>Space</b> shoot &middot; <b>R</b> reload &middot; <b>P</b> pause</p>
+          <p class="hint touchonly"><b>Tap</b> the screen to shoot where you tap &middot; tap <b>RELOAD</b> when your clip runs dry</p>
+        </div>
+        <div class="titleright"><img id="heroImg" alt="A raccoon laughing at you" decoding="async"><div class="bubble">HA HA HA!</div></div>
+      </div>
+      <footer class="credit">Free to play and share &middot; <a href="https://github.com/nbwillcox/SpaceDuckHunter" target="_blank" rel="noopener">github.com/nbwillcox/SpaceDuckHunter</a> &middot; <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a></footer>
+    </section>
+
+    <section id="pause" class="screen hidden">
+      <h2>PAUSED</h2>
+      <div class="menu">
+        <button id="btnResume" class="primary">RESUME</button>
+        <button id="btnPauseSettings">SETTINGS</button>
+        <button id="btnQuit">QUIT TO TITLE</button>
+      </div>
+    </section>
+
+    <section id="settings" class="screen hidden">
+      <h2>SETTINGS</h2>
+      <div class="panel">
+        <label>Master volume <input id="setMaster" type="range" min="0" max="1" step="0.05"></label>
+        <label>Music volume <input id="setMusic" type="range" min="0" max="1" step="0.05"></label>
+        <label>Effects volume <input id="setSfx" type="range" min="0" max="1" step="0.05"></label>
+        <label>Ambient (weather &amp; crickets) <input id="setAmbient" type="range" min="0" max="1" step="0.05"></label>
+        <label>Aim speed (keys &amp; sticks) <input id="setAim" type="range" min="0.5" max="2" step="0.1"></label>
+        <label>Time of day
+          <select id="setTod"><option value="cycle">Day / night cycle</option><option value="day">Always day</option><option value="dusk">Always dusk</option><option value="night">Always night</option></select></label>
+        <label>Day length
+          <select id="setDayLen"><option value="90">Fast (1.5 min)</option><option value="240">Normal (4 min)</option><option value="600">Slow (10 min)</option></select></label>
+        <label>Weather
+          <select id="setWeather"><option value="dynamic">Dynamic</option><option value="clear">Always clear</option></select></label>
+        <label class="check"><input id="setAuto" type="checkbox"> Auto-reload when the clip is empty</label>
+        <label class="check"><input id="setShake" type="checkbox"> Screen shake</label>
+        <label class="check"><input id="setReduced" type="checkbox"> Reduced motion (fewer flashes &amp; particles)</label>
+      </div>
+      <div class="menu"><button id="btnSettingsBack" class="primary">BACK</button></div>
+    </section>
+
+    <section id="scores" class="screen hidden">
+      <h2>HIGH SCORES</h2>
+      <ol id="scoreList" class="scorelist"></ol>
+      <div class="menu">
+        <button id="btnScoresPlay" class="primary">PLAY AGAIN</button>
+        <button id="btnScoresBack">TITLE</button>
+      </div>
+    </section>
+
+    <section id="gameover" class="screen hidden">
+      <img id="overImg" class="overimg" alt="" decoding="async">
+      <div class="overbox">
+        <h2 class="over">GAME OVER</h2>
+        <p class="final">Score <b id="goScore">0</b> &middot; Level <b id="goStage">1</b></p>
+        <div id="goEntry" class="entry hidden">
+          <p class="newhs">NEW HIGH SCORE! Enter your initials</p>
+          <input id="goName" type="text" maxlength="3" autocomplete="off" spellcheck="false" aria-label="Your initials">
+          <div class="menu"><button id="btnSaveScore" class="primary">SAVE SCORE</button></div>
+        </div>
+        <div id="goButtons" class="menu">
+          <button id="btnRetry" class="primary">PLAY AGAIN</button>
+          <button id="btnGoTitle">TITLE</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <noscript><p style="color:#fff;padding:2rem">SpaceDuckHunter needs JavaScript enabled.</p></noscript>
+
+  <script src="js/util.js?v=4"></script>
+  <script src="js/config.js?v=4"></script>
+  <script src="js/audio.js?v=4"></script>
+  <script src="js/input.js?v=4"></script>
+  <script src="js/scores.js?v=4"></script>
+  <script src="js/sky.js?v=4"></script>
+  <script src="js/art.js?v=4"></script>
+  <script src="js/game.js?v=4"></script>
+  <script src="js/render.js?v=4"></script>
+  <script src="js/ui.js?v=4"></script>
+  <script src="js/touchcfg.js?v=4"></script>
+  <script src="js/mobile.js?v=4"></script>
+  <script src="js/main.js?v=4"></script>
+</body>
+</html>
