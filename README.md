@@ -4,7 +4,7 @@ A free, retro-flavored duck-shooting game with a head nod to the classic light-g
 
 **Play it in your browser:** https://nbwillcox.github.io/SpaceDuckHunter/
 
-The ducks, the forest and all the sound are generated in code (vector-drawn sprites, a layered parallax scene pre-rendered in a day and a night palette, Web Audio synthesis). The raccoon is the one exception: his pictures are AI-generated art files in `assets/`. No build step. A sibling of [SpaceBert](https://github.com/nbwillcox/SpaceBert), [SpaceFox](https://github.com/nbwillcox/SpaceFox) and the other Space games.
+The raccoon, the ducks and the forest scenery are AI-generated pictures (Z-Image Turbo via ComfyUI, in `assets/`); the sky, day/night lighting, weather, effects and all sound (including the gunshot, reload, wing flaps, quacks and the raccoon's laugh) are generated in code with Canvas and Web Audio. No build step. A sibling of [SpaceBert](https://github.com/nbwillcox/SpaceBert), [SpaceFox](https://github.com/nbwillcox/SpaceFox) and the other Space games.
 
 ## How to play
 
