@@ -127,10 +127,9 @@
     resize();
     const hero = 'assets/coon_hero.webp?v=1';
     document.getElementById('heroImg').src = hero; document.getElementById('overImg').src = hero;
-    Art.buildDucks();
-    Sky.init();
     if (['day', 'dusk', 'night'].indexOf(G.debug.tod) >= 0) { S.tod = G.debug.tod; Sky.forceTime({ day: 0.5, dusk: 0.73, night: 0.02 }[G.debug.tod]); }
     Art.load().then(() => {
+      Sky.setImages(Art.env); Sky.init();
       Game.reset(true, 1);
       if (G.debug.wx) { S.weather = 'dynamic'; Sky.setWeather(G.debug.wx); for (const k in Sky.wxI) Sky.wxI[k] = k === G.debug.wx ? 1 : 0; }
       M.mode = 'title'; UI.show('title');

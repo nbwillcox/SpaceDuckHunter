@@ -3,7 +3,7 @@
   'use strict';
   const U = G.U, C = G.C, S = G.settings, I = G.input, Art = G.art, Sky = G.sky, Game = G.game;
   const W = C.W, H = C.H, TAU = Math.PI * 2;
-  const FLAP = [0, 1, 2, 3, 2, 1];
+  const FLAP = [0, 1, 2, 3];
   const FONT = '"Segoe UI", system-ui, -apple-system, Roboto, sans-serif';
 
   function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
@@ -23,7 +23,7 @@
       ctx.drawImage(glow, d.x - 74, d.y - 64, 148, 128); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
       if (d.state === 'fly' || d.state === 'escape') {
         const fl = Math.abs(d.vx) < 1 ? 1 : (d.vx < 0), tilt = Math.atan2(d.vy, Math.max(30, Math.abs(d.vx))) * 0.6;
-        Art.drawDuck(ctx, d.color, FLAP[Math.floor(d.flap) % 6], d.x, d.y, { flip: fl, rot: fl ? -tilt : tilt, size: d.size, night, alpha: fog });
+        Art.drawDuck(ctx, d.color, FLAP[Math.floor(d.flap) % 4], d.x, d.y, { flip: fl, rot: fl ? -tilt : tilt, size: d.size, night, alpha: fog });
       } else if (d.state === 'hit') {
         const sc = 1 + 0.12 * Math.sin(d.t * 30);
         Art.drawDuck(ctx, d.color, 4, d.x, d.y, { flip: d.vx < 0, size: d.size * sc, night });

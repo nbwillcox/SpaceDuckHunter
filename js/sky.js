@@ -185,6 +185,76 @@
     }
   }
 
+  /* ---------------------------------------------------------------- AI-art sprite layers (used when assets/env_*.webp are loaded) */
+  let IMG = {};
+  Sky.setImages = function (o) { IMG = o || {}; };
+  const spriteCache = {};
+  /* a sprite recoloured for a variant: night darkens it toward navy; haze washes distant objects toward the sky colour */
+  function variant(key, night, hazeA, dark) {
+    const id = key + '|' + night + '|' + hazeA + '|' + (dark || 0);
+    if (spriteCache[id]) return spriteCache[id];
+    const im = IMG[key], c = mk(); c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const g = c.getContext('2d'); g.drawImage(im, 0, 0); g.globalCompositeOperation = 'source-atop';
+    if (night) { g.fillStyle = 'rgba(6,14,64,0.60)'; g.fillRect(0, 0, c.width, c.height); g.fillStyle = 'rgba(40,80,210,0.16)'; g.fillRect(0, 0, c.width, c.height); }
+    if (dark) { g.fillStyle = 'rgba(0,18,14,' + dark + ')'; g.fillRect(0, 0, c.width, c.height); }
+    if (hazeA > 0) { g.fillStyle = night ? 'rgba(34,52,130,' + hazeA + ')' : 'rgba(205,228,255,' + hazeA + ')'; g.fillRect(0, 0, c.width, c.height); }
+    return (spriteCache[id] = c);
+  }
+  function put(L, key, x, base, h, night, hazeA, o) {
+    o = o || {};
+    const im = IMG[key], w = h * im.naturalWidth / im.naturalHeight, g = L.g;
+    g.save(); g.translate(x, base);
+    if (o.flip) g.scale(-1, 1);
+    g.drawImage(variant(key, night, hazeA, o.dark), -w / 2, -h, w, h);
+    g.restore();
+    return w;
+  }
+  const TREES = ['tree1', 'tree2', 'tree3', 'tree4', 'tree5'];
+  function forestS(L, night, rnd, o) {
+    const items = [];
+    for (let x = -30; x < LW + 30; x += o.gap * (0.6 + rnd() * 0.8)) items.push({ x, h: o.hMin + rnd() * (o.hMax - o.hMin), k: TREES[(rnd() * TREES.length) | 0], f: rnd() < 0.5, g: rnd() });
+    items.sort((a, b) => a.h - b.h);
+    for (const t of items) {
+      const w = put(L, t.k, t.x, L.h - 2, Math.min(t.h, L.h - 4), night, o.haze, { flip: t.f });
+      const n = 2 + ((t.h / 100) | 0);
+      for (let i = 0; i < n; i++) L.glows.push({ x: t.x + (rnd() - 0.5) * w * 0.55, y: L.h - 2 - t.h * (0.7 + rnd() * 0.25), r: 6 + t.h * 0.05 + rnd() * 6, h: [165, 180, 300, 320, 95][(rnd() * 5) | 0] });
+    }
+  }
+  function farS(L, p, rnd, night) {
+    drawFar(L, p, rnd);
+    for (let i = 0; i < 24; i++) {
+      const x = rnd() * LW, h = 70 + rnd() * 120, k = rnd() < 0.5 ? 'crys1' : 'crys2', f = rnd() < 0.5;
+      put(L, k, x, L.h + 4 - rnd() * 10, h, night, 0.38, { flip: f });
+      if (rnd() < 0.6) L.glows.push({ x, y: L.h - h * 0.8, r: 8 + h * 0.06, h: 195 + rnd() * 100 });
+    }
+  }
+  function groundS(L, p, rnd, night) {
+    drawGround(L, p, rnd);
+    for (let i = 0; i < 26; i++) {
+      const x = rnd() * LW, y = 30 + rnd() * 92, h = 18 + rnd() * 24, k = rnd() < 0.5 ? 'shroom1' : 'shroom2';
+      put(L, k, x, y + h * 0.4, h, night, 0, { flip: rnd() < 0.5 });
+      L.glows.push({ x, y: y - h * 0.2, r: 8 + h * 0.3, h: [170, 310, 100][(rnd() * 3) | 0] });
+    }
+  }
+  function heroS(L, p, rnd, night) {
+    put(L, 'tree5', LW - 58, L.h - 4, 300, night, 0.12);
+    put(L, 'hero', 178, L.h - 2, 438, night, 0);
+    for (let i = 0; i < 9; i++) L.glows.push({ x: 40 + rnd() * 270, y: L.h - 120 - rnd() * 280, r: 14 + rnd() * 10, h: [175, 300, 95][(rnd() * 3) | 0] });
+    put(L, 'bush', LW - 150, L.h - 2, 210, night, 0);
+    for (let i = 0; i < 6; i++) L.glows.push({ x: LW - 230 + rnd() * 160, y: L.h - 20 - rnd() * 150, r: 12 + rnd() * 6, h: [165, 100, 310][(rnd() * 3) | 0] });
+  }
+  function grassS(L, night, rnd, o) {
+    const g = L.g, h = L.h;
+    g.fillStyle = lin(g, 0, h - 50, 0, h, night ? '#04181c' : '#0d4a3a', 'rgba(2,10,10,1)'); g.fillRect(0, h - 40, LW, 40);
+    const items = [];
+    for (let i = 0; i < o.n; i++) items.push({ x: -20 + rnd() * (LW + 40), h: o.hMin + rnd() * (o.hMax - o.hMin), k: rnd() < 0.5 ? 'tuft1' : 'tuft2', f: rnd() < 0.5, t: rnd() });
+    items.sort((a, b) => a.h - b.h);
+    for (const t of items) {
+      put(L, t.k, t.x, h + 6, t.h, night, 0, { flip: t.f, dark: o.dark });
+      if (t.t < o.tip) L.glows.push({ x: t.x + (rnd() - 0.5) * 18, y: h + 6 - t.h * 0.92, r: 8, h: [165, 100, 190, 320][(rnd() * 4) | 0], grass: true });
+    }
+  }
+
   /* ---------------------------------------------------------------- build */
   const LAYERS = [];       /* {name, y0, h, par, day, night, glows} drawn back to front */
   const spec = [
@@ -210,22 +280,32 @@
 
   function build() {
     if (built) return; built = true;
+    const S2 = !!(IMG.tree1 && IMG.hero && IMG.tuft1);
+    const painters = {
+      far: (L, p, r, n) => (S2 && IMG.crys1 ? farS(L, p, r, n) : drawFar(L, p, r)),
+      t1: (L, p, r, n) => (S2 ? forestS(L, n, r, { gap: 66, hMin: 170, hMax: 265, haze: 0.5 }) : drawForest(L, p, r, { gap: 58, hMin: 150, hMax: 250, wMin: 12, wMax: 20, cMin: 70, cMax: 130, cRatio: 0.42, sink: 0, trunk: p.t1, cap: p.cap1, glow: 0.35 })),
+      t2: (L, p, r, n) => (S2 ? forestS(L, n, r, { gap: 150, hMin: 270, hMax: 372, haze: 0.16 }) : drawForest(L, p, r, { gap: 112, hMin: 230, hMax: 340, wMin: 24, wMax: 40, cMin: 120, cMax: 220, cRatio: 0.4, sink: 0, trunk: p.t2, cap: p.cap2, glow: 0.5 })),
+      ground: (L, p, r, n) => (S2 && IMG.shroom1 ? groundS(L, p, r, n) : drawGround(L, p, r)),
+      hero: (L, p, r, n) => { if (S2) heroS(L, p, r, n); else { drawHero(L, p, r); drawBush(L, p, r); } },
+    };
     for (const sp of spec) {
       const out = { name: sp.name, y0: sp.y0, h: sp.h, par: sp.par, glows: [] };
       for (const key of ['day', 'night']) {
         const L = layerCanvas(sp.h);
-        sp.fn(L, PAL[key], mulberry(sp.seed));
+        painters[sp.name](L, PAL[key], mulberry(sp.seed), key === 'night');
         out[key] = L.c;
         if (key === 'night') out.glows = L.glows;
       }
       LAYERS.push(out);
     }
-    const gspec = { back: { y0: 414, h: 126, n: 520, hMin: 34, hMax: 112, tip: 0.2, seed: 21, k: 'gb' }, front: { y0: 440, h: 100, n: 380, hMin: 40, hMax: 98, tip: 0.18, seed: 22, k: 'gf' } };
+    const gspec = { back: { y0: 414, h: 126, n: 520, hMin: 34, hMax: 112, tip: 0.2, seed: 21, k: 'gb', sn: 96, sh0: 46, sh1: 96, dark: 0.12, stip: 0.18 },
+      front: { y0: 440, h: 100, n: 380, hMin: 40, hMax: 98, tip: 0.18, seed: 22, k: 'gf', sn: 84, sh0: 40, sh1: 88, dark: 0.28, stip: 0.16 } };
     for (const nm in gspec) {
       const gs = gspec[nm], out = { y0: gs.y0, h: gs.h, glows: [] };
       for (const key of ['day', 'night']) {
         const L = layerCanvas(gs.h);
-        drawGrass(L, PAL[key], mulberry(gs.seed), { n: gs.n, hMin: gs.hMin, hMax: gs.hMax, tip: gs.tip, cols: PAL[key][gs.k] });
+        if (S2) grassS(L, key === 'night', mulberry(gs.seed), { n: gs.sn, hMin: gs.sh0, hMax: gs.sh1, tip: gs.stip, dark: gs.dark });
+        else drawGrass(L, PAL[key], mulberry(gs.seed), { n: gs.n, hMin: gs.hMin, hMax: gs.hMax, tip: gs.tip, cols: PAL[key][gs.k] });
         out[key] = L.c; if (key === 'night') out.glows = L.glows;
       }
       GRASS[nm] = out;
@@ -250,7 +330,7 @@
       }
     }
     planet = mk(); planet.width = 300; planet.height = 200;
-    {
+    if (IMG.planet) { const g = planet.getContext('2d'), im = IMG.planet, hh = 190, ww = hh * im.naturalWidth / im.naturalHeight; g.drawImage(im, 150 - ww / 2, 100 - hh / 2, ww, hh); } else {
       const g = planet.getContext('2d'), cx = 150, cy = 100, R = 56;
       const ring = (front) => { g.save(); g.translate(cx, cy); g.rotate(-0.32); g.lineWidth = 7; g.strokeStyle = front ? 'rgba(255,220,170,0.85)' : 'rgba(255,220,170,0.55)'; g.beginPath(); g.ellipse(0, 0, 112, 26, 0, front ? 0 : Math.PI, front ? Math.PI : TAU); g.stroke();
         g.lineWidth = 3; g.strokeStyle = 'rgba(255,170,120,0.55)'; g.beginPath(); g.ellipse(0, 0, 96, 21, 0, front ? 0 : Math.PI, front ? Math.PI : TAU); g.stroke(); g.restore(); };
@@ -262,14 +342,17 @@
       for (let i = 0; i < 6; i++) { g.fillStyle = 'rgba(' + (i % 2 ? '255,230,200' : '120,40,110') + ',0.16)'; g.fillRect(cx - R, cy - R + i * 20 + 4, R * 2, 8 + (i % 3) * 3); }
       g.restore(); ring(true);
     }
-    const moon = (R, c0, c1) => { const c = mk(); c.width = c.height = R * 4; const g = c.getContext('2d'), m = R * 2;
+    const moon = (R, c0, c1, tintGreen) => { const c = mk(); c.width = c.height = R * 4; const g = c.getContext('2d'), m = R * 2;
       const gl = g.createRadialGradient(m, m, R * 0.8, m, m, R * 2); gl.addColorStop(0, 'rgba(200,220,255,0.35)'); gl.addColorStop(1, 'rgba(200,220,255,0)'); g.fillStyle = gl; g.fillRect(0, 0, c.width, c.height);
+      if (IMG.moon) { g.drawImage(IMG.moon, m - R, m - R, R * 2, R * 2); if (tintGreen) { g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(110,255,190,0.4)'; g.fillRect(0, 0, c.width, c.height); g.globalCompositeOperation = 'source-over'; } return c; }
       const gr = g.createRadialGradient(m - R * 0.3, m - R * 0.3, R * 0.1, m, m, R); gr.addColorStop(0, c0); gr.addColorStop(1, c1);
       g.fillStyle = gr; g.beginPath(); g.arc(m, m, R, 0, TAU); g.fill();
       const rr = mulberry(5); for (let i = 0; i < 7; i++) { g.fillStyle = 'rgba(40,50,90,0.2)'; g.beginPath(); g.arc(m + (rr() - 0.5) * R * 1.2, m + (rr() - 0.5) * R * 1.2, R * (0.08 + rr() * 0.18), 0, TAU); g.fill(); }
       return c; };
-    moonA = moon(30, '#fffbe6', '#b9c4e6'); moonB = moon(15, '#d8ffe6', '#7fc9b0');
-    for (let v = 0; v < 4; v++) {
+    moonA = moon(30, '#fffbe6', '#b9c4e6'); moonB = moon(15, '#d8ffe6', '#7fc9b0', true);
+    if (IMG.cloud1) {
+      for (const k of ['cloud1', 'cloud2', 'cloud3', 'cloud1']) { const im = IMG[k], c = mk(); c.width = 360; c.height = Math.round(360 * im.naturalHeight / im.naturalWidth); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); cloudSprites.push(c); }
+    } else for (let v = 0; v < 4; v++) {
       const c = mk(); c.width = 360; c.height = 140; const g = c.getContext('2d'), rr = mulberry(40 + v);
       const n = 11 + v * 2;
       for (let i = 0; i < n; i++) {
@@ -556,11 +639,11 @@
       c.x += (Sky.wind * 18 + c.sp * 0.3 * Math.sign(Sky.wind || 1)) * 0.016 * (0.5 + c.z);
       if (c.x > W + 220) c.x = -380; else if (c.x < -380) c.x = W + 220;
       const sc = c.s * (1 + cov * 0.35);
-      g.drawImage(cloudSprites[c.v], c.x - lt.px * 8 * c.z, c.y - lt.py * 3, 360 * sc, 140 * sc);
+      const cs = cloudSprites[c.v]; g.drawImage(cs, c.x - lt.px * 8 * c.z, c.y - lt.py * 3, cs.width * sc, cs.height * sc);
     }
     const base = mix([44, 54, 108], [252, 253, 255], Sky.day);
     const tint = mix(mix(base, [255, 150, 120], Sky.dusk * 0.75), [78, 86, 108], clamp(Sky.dark * 1.7, 0, 0.9));
-    g.globalCompositeOperation = 'source-atop'; g.fillStyle = rgb(tint, 0.88); g.fillRect(0, 0, W, 320); g.globalCompositeOperation = 'source-over';
+    g.globalCompositeOperation = 'source-atop'; g.fillStyle = rgb(tint, IMG.cloud1 ? 0.62 : 0.88); g.fillRect(0, 0, W, 320); g.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = clamp(cov * 1.1, 0, 0.96); ctx.drawImage(cloudCv, 0, 0); ctx.globalAlpha = 1;
   }
   function drawFog(ctx, front) {

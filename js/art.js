@@ -7,10 +7,29 @@
   G.art = Art;
 
   const COON = ['laugh_p1', 'laugh_p2', 'laugh_p3', 'hold1', 'hold2', 'sniff', 'jump', 'hero', 'hero_helmet'];
+  const DPOSE = ['up', 'mid', 'down', 'hit', 'fall'];
+  const ENV = ['tree1', 'tree2', 'tree3', 'tree4', 'tree5', 'hero', 'bush', 'crys1', 'crys2', 'tuft1', 'tuft2', 'shroom1', 'shroom2', 'planet', 'moon', 'cloud1', 'cloud2', 'cloud3'];
   Art.load = function () {
     return new Promise((resolve) => {
-      let left = COON.length;
+      let left = COON.length + 3 * DPOSE.length + ENV.length;
       const done = () => { if (--left <= 0) { Art.ready = true; resolve(); } };
+      Art.env = {};
+      ENV.forEach((n) => { const im = new Image(); im.onload = () => { Art.env[n] = im; done(); }; im.onerror = done; im.src = 'assets/env_' + n + '.webp?v=1'; });
+      for (const k of ['black', 'blue', 'red']) {
+        Art.dimg = Art.dimg || {}; Art.dimg[k] = {};
+        DPOSE.forEach((pose) => {
+          const im = new Image();
+          im.onload = () => {
+            Art.dimg[k][pose] = im;
+            const c = mk(); c.width = im.naturalWidth; c.height = im.naturalHeight;
+            const g = c.getContext('2d'); g.drawImage(im, 0, 0);
+            g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(8,14,50,0.42)'; g.fillRect(0, 0, c.width, c.height);
+            Art.dimg[k][pose + '_dark'] = c; done();
+          };
+          im.onerror = done;
+          im.src = 'assets/duck_' + k + '_' + pose + '.webp?v=1';
+        });
+      }
       COON.forEach((n) => {
         const im = new Image();
         im.onload = () => {
@@ -126,18 +145,33 @@
       for (const pose of ['hit', 'fall']) { const r = bakeDuck(k, 0, pose); Art.duck[k].push(r[0]); Art.duckDark[k].push(r[1]); }
     }
   };
-  /* frame: 0..3 flap, 4 hit, 5 fall. size = body length in px (the bake is 150 units wide) */
+  /* frame: 0..3 flap (up, mid, down, mid), 4 hit, 5 fall. size = about the body length in px; the picture is ~1.7x wider because of the wings */
+  const FRAME_POSE = { black: ['up', 'mid', 'down', 'mid', 'hit', 'fall'], blue: ['up', 'down', 'up', 'down', 'hit', 'fall'], red: ['up', 'down', 'up', 'down', 'hit', 'fall'] };   /* blue + red 'mid' pictures turned to face the viewer, so those two just beat between up and down */
   Art.drawDuck = function (ctx, key, frame, x, y, o) {
-    const c = Art.duck[key][frame]; if (!c) return;
     o = o || {};
+    const set = Art.dimg && Art.dimg[key], pose = FRAME_POSE[key][frame];
+    const im = set && set[pose];
+    if (!im) return Art.drawVectorDuck(ctx, key, frame, x, y, o);
+    const w = (o.size || 70) * 1.75, h = w * im.naturalHeight / im.naturalWidth;
+    ctx.save(); ctx.translate(x, y);
+    if (o.rot) ctx.rotate(o.rot);
+    ctx.scale(o.flip ? -1 : 1, 1);
+    if (o.alpha !== undefined) ctx.globalAlpha = o.alpha;
+    ctx.drawImage(im, -w / 2, -h / 2, w, h);
+    const n = o.night || 0;
+    if (n > 0.03) { ctx.globalAlpha = (o.alpha === undefined ? 1 : o.alpha) * n; ctx.drawImage(set[pose + '_dark'], -w / 2, -h / 2, w, h); }
+    ctx.restore();
+  };
+  /* fallback if the pictures are missing */
+  Art.drawVectorDuck = function (ctx, key, frame, x, y, o) {
+    if (!Art.duck[key] || !Art.duck[key].length) Art.buildDucks();
+    const c = Art.duck[key][frame]; if (!c) return;
     const sc = (o.size || 70) / 78, w = 150 * sc, h = 130 * sc;
     ctx.save(); ctx.translate(x, y);
     if (o.rot) ctx.rotate(o.rot);
     ctx.scale(o.flip ? -1 : 1, 1);
     if (o.alpha !== undefined) ctx.globalAlpha = o.alpha;
     ctx.drawImage(c, -w / 2, -h / 2 - 2 * sc, w, h);
-    const n = o.night || 0;
-    if (n > 0.03) { ctx.globalAlpha = (o.alpha === undefined ? 1 : o.alpha) * n; ctx.drawImage(Art.duckDark[key][frame], -w / 2, -h / 2 - 2 * sc, w, h); }
     ctx.restore();
   };
 

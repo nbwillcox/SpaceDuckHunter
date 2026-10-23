@@ -45,7 +45,7 @@
     const sp = p.speed * ({ black: 1, blue: 1.1, red: 1.22 }[color]) * U.rand(0.9, 1.1);
     return {
       x, y, color, sp, vx: Math.cos(ang) * sp * dir, vy: Math.sin(ang) * sp, state: 'fly', t: 0, flap: Math.random() * 6, dirT: U.rand(0.2, 0.6),
-      turn: p.turn, size: 90, val: Math.round(BASE[color] * p.mult / 50) * 50, idx, spin: 0, quack: U.rand(0.1, 1.2),
+      turn: p.turn, size: 82, val: Math.round(BASE[color] * p.mult / 50) * 50, idx, spin: 0, quack: U.rand(0.1, 1.2),
     };
   }
   function steer(d, dt) {
@@ -72,8 +72,9 @@
       d.t += dt;
       if (d.state === 'fly') {
         steer(d, dt);
-        d.flap += dt * (8 + d.sp / 70);
-        d.quack -= dt; if (d.quack <= 0) { d.quack = U.rand(1.6, 4); if (Game.phase === 'fly' || Game.demo) SFX.quack(U.rand(0.85, 1.25)); }
+        d.flap += dt * (13 + d.sp / 50);
+        const cyc = Math.floor(d.flap / 4); if (cyc !== d.cyc) { d.cyc = cyc; SFX.flap(U.clamp(d.x / W * 2 - 1, -0.9, 0.9), 1 / (1 + 0.12 * Game.ducks.length)); }
+        d.quack -= dt; if (d.quack <= 0) { d.quack = U.rand(1.6, 4); if (Game.phase === 'fly' || Game.demo) SFX.quack(U.rand(0.85, 1.25), d.x); }
       } else if (d.state === 'hit') {
         if (d.t > 0.34) { d.state = 'fall'; d.t = 0; d.vy = 0; d.vx = U.rand(-30, 30); SFX.fall(0.75); }
       } else if (d.state === 'fall') {
@@ -81,7 +82,8 @@
         if (d.y >= C.LAUNCH_Y + 4) { d.state = 'landed'; d.t = 0; SFX.thud(); Game.lastLandX = U.clamp(d.x, 150, W - 150); Game.shake = Math.max(Game.shake, 3); Game.roundHits++; }
       } else if (d.state === 'escape') {
         d.vy += (-420 - d.vy) * Math.min(1, dt * 3); d.vx += (Math.sign(d.vx || 1) * 90 - d.vx) * Math.min(1, dt * 2);
-        d.x += d.vx * dt; d.y += d.vy * dt; d.flap += dt * 16;
+        d.x += d.vx * dt; d.y += d.vy * dt; d.flap += dt * 24;
+        const cy2 = Math.floor(d.flap / 4); if (cy2 !== d.cyc) { d.cyc = cy2; SFX.flap(U.clamp(d.x / W * 2 - 1, -0.9, 0.9), 0.8); }
         if (d.y < -90) { d.state = 'gone'; }
       }
     }
@@ -121,7 +123,7 @@
     }
     if (best) {
       const d = best; d.state = 'hit'; d.t = 0; Game.row[d.idx] = 1; Game.levelHits++; Game.stats.hits++;
-      Game.score += d.val; SFX.hit(); feathers(d.x, d.y, d.color === 'red' ? '#e3303f' : d.color === 'blue' ? '#4a86ff' : '#2fe0a0', 14);
+      Game.score += d.val; SFX.hit(d.x); feathers(d.x, d.y, d.color === 'red' ? '#e3303f' : d.color === 'blue' ? '#4a86ff' : '#2fe0a0', 14);
       popup('+' + d.val, d.x, d.y - 34, d.color === 'red' ? '#ff8c8c' : d.color === 'blue' ? '#9cc4ff' : '#ffe36a', 28);
       Game.rings.push({ x: d.x, y: d.y, t: 0, max: 0.4, col: '#fff0a0', r: 14 });
     }
@@ -147,7 +149,7 @@
     Game.spawned += size;
     Game.phase = 'fly'; Game.pt = 0;
     banner('ROUND ' + Game.roundN, null, 0.9, '#ffe36a');
-    Game.ducks.forEach((d, i) => setTimeout(() => SFX.quack(U.rand(0.9, 1.3)), i * 90));
+    Game.ducks.forEach((d, i) => setTimeout(() => SFX.quack(U.rand(0.9, 1.3), Game.ducks[i] && Game.ducks[i].x), i * 90));
   }
   function startCoon() {
     Game.phase = 'coon'; Game.pt = 0;
@@ -188,7 +190,7 @@
   }
 
   /* ---------------------------------------------------------------- main update */
-  let ambT = 0, flapT = 0;
+  let ambT = 0;
   Game.update = function (dt) {
     Game.t += dt;
     Sky.update(dt);
@@ -251,7 +253,6 @@
     if (I.takeReload()) startReload();
     if (Game.reloadT > 0) { Game.reloadT -= dt; if (Game.reloadT <= 0) { Game.reloadT = 0; Game.clip = Math.min(C.CLIP, Game.budget); SFX.blip(); } }
     updateDucks(dt);
-    flapT -= dt; if (flapT <= 0 && Game.ducks.some((d) => d.state === 'fly')) { flapT = 0.1; SFX.flap(); }
     Game.flyT -= dt;
     const alive = Game.ducks.some((d) => d.state === 'fly');
     if (alive && (Game.flyT <= 0 || (Game.budget <= 0 && Game.t - Game.lastShotT > 0.7 && !Game.ducks.some((d) => d.state === 'hit')))) escapeAll();
