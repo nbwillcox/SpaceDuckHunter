@@ -27,6 +27,10 @@ The raccoon, the ducks and the forest scenery are AI-generated pictures (Z-Image
 
 Play in landscape. Tap anywhere on the screen to aim and shoot at that spot, and tap the **RELOAD** button when your clip runs dry. The pause button opens the menu. The on-screen controls appear on touch devices automatically; Settings has size, opacity and a left-handed layout. Use your browser's *Add to Home Screen* to install it as a full-screen app.
 
+### Controller
+
+Plug in a gamepad and it just works: either stick or the D-pad moves the crosshair, **A / RT / RB** shoots, **B / X / LT** reloads, **Start** pauses. In menus the D-pad / left stick moves the highlight, **A** selects, **B** goes back and **Start** plays or resumes. **Settings -> Controller** has a dead-zone slider and lets you remap every button.
+
 ## Settings
 
 Volume sliders (master / music / effects / ambient), aim speed, **time of day** (cycle, always day, dusk or night), **day length**, **weather** (dynamic or always clear), auto-reload, screen shake and reduced motion. Saved in your browser, as are the local top-10 high scores.

@@ -62,7 +62,7 @@
     if (dx && dy) { dx *= 0.7071; dy *= 0.7071; }
     if (dx || dy) { I.x = clamp(I.x + dx * sp * dt, 0, C.W); I.y = clamp(I.y + dy * sp * dt, 0, C.H); }
     if (I.ping > 0) I.ping -= dt;
-    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const pads = window.PAD ? [] : (navigator.getGamepads ? navigator.getGamepads() : []);
     let p = null;
     for (const q of pads) if (q && q.connected) { p = q; break; }
     if (!p) { I.padName = ''; return; }
